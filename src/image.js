@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { createCanvas } from "canvas";
 
 const W = 1600;
 const PAD = 64;
@@ -182,68 +183,122 @@ export async function generateANIImage(incidents) {
 }
 
 export async function generateUSRImage(requests) {
-  const IW = W - PAD * 2;
-  const CP = 48;
-  const TITLE_LH = 50;
-  const DESC_LH = 36;
-  const DETAILS_LH = 30;
+  const request = requests[0];
+  const canvas = createCanvas(W, 600);
+  const ctx = canvas.getContext("2d");
 
-  const rows = requests.map((req) => {
-    const titleLines = wrap(req.title, 62);
-    const descLines = wrap(req.description, 96).slice(0, 2);
-    const detailsLines = wrap(req.details, 90).slice(0, 4);
-    const titleH = titleLines.length * TITLE_LH;
-    const descH = descLines.length * DESC_LH;
-    const detailsH = detailsLines.length * DETAILS_LH;
-    const h = CP + titleH + 16 + descH + 16 + detailsH + 34 + CP;
-    return { ...req, titleLines, descLines, detailsLines, rowH: h, titleH, descH, detailsH };
-  });
+  // Background with gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, 600);
+  bgGrad.addColorStop(0, "#0f172a");
+  bgGrad.addColorStop(1, "#020617");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, 600);
 
-  const HEADER_H = 240;
-  const totalH = HEADER_H + rows.reduce((s, r) => s + r.rowH + 32, 0) + PAD;
+  // Background glows
+  const gradA = ctx.createRadialGradient(W * 0.2, 100, 0, W * 0.2, 100, 300);
+  gradA.addColorStop(0, "rgba(251, 146, 60, 0.15)");
+  gradA.addColorStop(1, "rgba(251, 146, 60, 0)");
+  ctx.fillStyle = gradA;
+  ctx.beginPath();
+  ctx.arc(W * 0.2, 100, 300, 0, Math.PI * 2);
+  ctx.fill();
 
-  let y = HEADER_H;
-  const rowSvgs = rows
-    .map((row) => {
-      const ry = y;
-      y += row.rowH + 32;
+  const gradB = ctx.createRadialGradient(W * 0.8, 200, 0, W * 0.8, 200, 280);
+  gradB.addColorStop(0, "rgba(56, 189, 248, 0.12)");
+  gradB.addColorStop(1, "rgba(56, 189, 248, 0)");
+  ctx.fillStyle = gradB;
+  ctx.beginPath();
+  ctx.arc(W * 0.8, 200, 280, 0, Math.PI * 2);
+  ctx.fill();
 
-      const titleY = ry + CP + 36;
-      const descY = ry + CP + row.titleH + 26;
-      const detailsY = descY + row.descH + 22;
-      const metaY = detailsY + row.detailsH + 28;
-      const badgeX = W - PAD - 120 - 48;
+  // Title
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 40px Arial";
+  const titleLines = request ? wrap(request.title, 60) : ["No unresolved request found"];
+  let y = 80;
+  for (const line of titleLines) {
+    ctx.fillText(line, 64, y);
+    y += 52;
+  }
 
-      return `
-    <rect x="${PAD}" y="${ry}" width="${IW}" height="${row.rowH}" rx="20" fill="#09090b" filter="url(#shadow)"/>
-    <rect x="${PAD}" y="${ry}" width="${IW}" height="${row.rowH}" rx="20" fill="url(#cardGrad)" stroke="url(#cardBorder)" stroke-width="2"/>
-    <rect x="${PAD}" y="${ry}" width="8" height="${row.rowH}" rx="4" fill="#eab308"/>
-    ${textLines(row.titleLines, PAD + 48, titleY, TITLE_LH, "card-title")}
-    ${statusBadge(row.status, badgeX, titleY)}
-    ${textLines(row.descLines, PAD + 48, descY, DESC_LH, "card-desc")}
-    ${row.detailsLines.length ? `<text x="${PAD + 48}" y="${detailsY - 8}" class="meta" style="font-size: 16px; font-weight: 600; fill: #f8fafc; letter-spacing: 0.5px">Technical details:</text>` : ""}
-    ${textLines(row.detailsLines, PAD + 48, detailsY + 18, DETAILS_LH, "card-desc")}
-    ${
-      row.difficulty
-        ? `<text x="${PAD + 48}" y="${metaY}" class="meta" style="font-weight: 500">Complexity: ${esc(
-            row.difficulty,
-          )}  •  Effort: ${esc(row.timeEstimate)}</text>`
-        : ""
-    }`;
-    })
-    .join("\n");
+  // AI summary header
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "600 22px Arial";
+  ctx.fillText("Summary", 64, y + 40);
 
-  const svg = `<svg width="${W}" height="${totalH}" xmlns="http://www.w3.org/2000/svg">
-  ${DEFS("#eab308", "#3b82f6")}
-  ${STYLE}
-  <rect width="${W}" height="8" fill="#eab308"/>
-  <text x="${PAD}" y="112" class="header-title">Unanswered Script Request</text>
-  <text x="${PAD}" y="152" class="header-sub">Wikipedia:User scripts/Requests  •  ${esc(
-    new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC",
-  )}</text>
-  <rect x="${PAD}" y="192" width="${W - PAD * 2}" height="1" fill="url(#lineGrad)"/>
-  ${rowSvgs}
-</svg>`;
+  // Summary lines
+  ctx.fillStyle = "#a1a1aa";
+  ctx.font = "400 26px Arial";
+  const summaryLines = request ? wrap(request.description, 80).slice(0, 3) : [];
+  y += 80;
+  for (const line of summaryLines) {
+    ctx.fillText(line, 64, y);
+    y += 34;
+  }
 
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  // Technical context header
+  if (request) {
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "600 20px Arial";
+    ctx.fillText("Technical context", 64, y + 20);
+  }
+
+  // Details lines
+  if (request) {
+    ctx.fillStyle = "#a1a1aa";
+    ctx.font = "400 24px Arial";
+    const detailsLines = wrap(request.details, 78).slice(0, 4);
+    y += 60;
+    for (const line of detailsLines) {
+      ctx.fillText(line, 64, y);
+      y += 30;
+    }
+  }
+
+  // Chips for status and complexity
+  if (request) {
+    // Status chip
+    ctx.fillStyle = "rgba(220, 38, 38, 0.1)";
+    roundRect(ctx, 64, y + 40, 180, 60, 8);
+    ctx.strokeStyle = "#dc2626";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#dc2626";
+    ctx.font = "700 18px Arial";
+    ctx.fillText("STATUS", 74, y + 68);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "600 18px Arial";
+    ctx.fillText(request.status.toUpperCase(), 74, y + 88);
+
+    // Complexity chip
+    ctx.fillStyle = "rgba(234, 88, 12, 0.1)";
+    roundRect(ctx, 280, y + 40, 280, 60, 8);
+    ctx.strokeStyle = "#ea580c";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#ea580c";
+    ctx.font = "700 18px Arial";
+    ctx.fillText("COMPLEXITY", 290, y + 68);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "600 16px Arial";
+    ctx.fillText(`${request.difficulty} • ${request.timeEstimate}`, 290, y + 88);
+  }
+
+  return canvas.toBuffer("image/png");
+}
+
+// Helper function for rounded rectangles
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  ctx.fill();
 }
