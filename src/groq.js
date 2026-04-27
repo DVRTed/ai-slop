@@ -9,8 +9,15 @@ async function callGroq(prompt, maxTokens = GROQ_OUTPUT_TOKENS) {
   const res = await groq.chat.completions.create({
     model: GROQ_MODEL,
     max_tokens: maxTokens,
+    temperature: 0,
     response_format: { type: "json_object" },
-    messages: [{ role: "user", content: prompt }],
+    messages: [
+      {
+        role: "system",
+        content: "Respond with valid JSON only. Do not add any explanation, notes, or extra fields.",
+      },
+      { role: "user", content: prompt },
+    ],
   });
   return JSON.parse(res.choices[0].message.content);
 }
@@ -55,18 +62,18 @@ export async function analyzeANI(threads) {
   const promptText = compileThreadsForPrompt(threads, 10);
 
   const { incidents } = await callGroq(`
-You are a Wikipedia drama analyst reviewing WP:ANI sections.
+You are reviewing WP:ANI sections.
+Choose the 4 most interesting incidents by conflict, heat, or many editors.
 
-Pick the 4 most interesting or contentious incidents. Prioritize ones with many editors involved or heated back-and-forth.
-
-Return JSON: { "incidents": [ ... ] }
+Return JSON only:
+{ "incidents": [ ... ] }
 Each item:
 {
   "title": "exact section title",
-  "summary": "3-5 sentences: who is involved, what the dispute is about, why it is heated",
-  "dramaScore": <1, 2, or 3>,
-  "participants": ["up to 4 editor usernames mentioned in the section"],
-  "outcome": "State the outcome and exactly who it affected (eg 'UserX blocked indefinitely', 'UserY warned'), or if it's unresolved or ongoing, state that. IF YOU CANNOT DETERMINE, return null" 
+  "summary": "3-5 sentences: who is involved, what the dispute is, and why it is heated",
+  "dramaScore": 1 | 2 | 3,
+  "participants": ["up to 4 usernames mentioned in the section"],
+  "outcome": "exact outcome, or null if unknown"
 }
 
 SECTIONS:
@@ -80,20 +87,30 @@ export async function analyzeUSR(threads) {
   console.log(`Sending USR prompt with length ${promptText.length}`);
 
   const { requests } = await callGroq(`
-You are reviewing WP:US/R (Wikipedia:User scripts/Requests).
+You are reviewing WP:US/R sections.
+Select exactly one request that is truly ignored and unresolved.
+If multiple qualify, choose one randomly.
 
-Find up to 5 requests that are truly UNANSWERED or UNRESOLVED. 
-CRITICAL RULE: Do NOT include any requests where another editor has provided a script, a functional solution, a workaround, or a satisfying answer. If someone replied with a solution (even if it's not a script) and the requester expressed gratitude or marked it as resolved, it is COMPLETELY RESOLVED and must be fully skipped. Only select requests that are actively stranded and waiting for someone to help.
+Skip any section if it contains:
+- a script, code sample, or workaround suggestion
+- a direct fix, answer, or "try X" instruction
+- thanks, resolution, or confirmation that the requester got a solution
 
-Return JSON: { "requests": [ ... ] }
+Return JSON only:
+{ "requests": [ ... ] }
 Each item:
 {
   "title": "exact section title",
-  "description": "short description of what the editor is asking for",
-  "status": "ignored" or "partial",
-  "difficulty": "estimate of technical difficulty: 'Easy', 'Medium', or 'Hard'",
-  "timeEstimate": "estimate of time required: e.g., '1-2 hours', 'A few days'"
+  "description": "concise technical summary of the requested feature or script",
+  "details": "short technical context or requirements, no fluff",
+  "status": "ignored",
+  "difficulty": "Easy" | "Medium" | "Hard",
+  "timeEstimate": "e.g. '1-2 hours', 'A few days'"
 }
+
+Notes:
+- description should be concise but meaningful, with relevant technical terms.
+- return only one request, or an empty array if none qualify.
 
 SECTIONS:
 ${promptText}`);

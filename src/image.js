@@ -184,16 +184,19 @@ export async function generateANIImage(incidents) {
 export async function generateUSRImage(requests) {
   const IW = W - PAD * 2;
   const CP = 48;
-  const TITLE_LH = 46;
+  const TITLE_LH = 50;
   const DESC_LH = 36;
+  const DETAILS_LH = 30;
 
   const rows = requests.map((req) => {
-    const titleLines = wrap(req.title, 65);
-    const descLines = wrap(req.description, 100).slice(0, 2);
+    const titleLines = wrap(req.title, 62);
+    const descLines = wrap(req.description, 96).slice(0, 2);
+    const detailsLines = wrap(req.details, 90).slice(0, 4);
     const titleH = titleLines.length * TITLE_LH;
     const descH = descLines.length * DESC_LH;
-    const h = CP + titleH + 16 + descH + 34 + CP;
-    return { ...req, titleLines, descLines, rowH: h, titleH, descH };
+    const detailsH = detailsLines.length * DETAILS_LH;
+    const h = CP + titleH + 16 + descH + 16 + detailsH + 34 + CP;
+    return { ...req, titleLines, descLines, detailsLines, rowH: h, titleH, descH, detailsH };
   });
 
   const HEADER_H = 240;
@@ -205,9 +208,10 @@ export async function generateUSRImage(requests) {
       const ry = y;
       y += row.rowH + 32;
 
-      const titleY = ry + CP + 34;
+      const titleY = ry + CP + 36;
       const descY = ry + CP + row.titleH + 26;
-      const metaY = ry + CP + row.titleH + row.descH + 52;
+      const detailsY = descY + row.descH + 22;
+      const metaY = detailsY + row.detailsH + 28;
       const badgeX = W - PAD - 120 - 48;
 
       return `
@@ -217,6 +221,8 @@ export async function generateUSRImage(requests) {
     ${textLines(row.titleLines, PAD + 48, titleY, TITLE_LH, "card-title")}
     ${statusBadge(row.status, badgeX, titleY)}
     ${textLines(row.descLines, PAD + 48, descY, DESC_LH, "card-desc")}
+    ${row.detailsLines.length ? `<text x="${PAD + 48}" y="${detailsY - 8}" class="meta" style="font-size: 16px; font-weight: 600; fill: #f8fafc; letter-spacing: 0.5px">Technical details:</text>` : ""}
+    ${textLines(row.detailsLines, PAD + 48, detailsY + 18, DETAILS_LH, "card-desc")}
     ${
       row.difficulty
         ? `<text x="${PAD + 48}" y="${metaY}" class="meta" style="font-weight: 500">Complexity: ${esc(
@@ -231,7 +237,7 @@ export async function generateUSRImage(requests) {
   ${DEFS("#eab308", "#3b82f6")}
   ${STYLE}
   <rect width="${W}" height="8" fill="#eab308"/>
-  <text x="${PAD}" y="112" class="header-title">Unanswered Script Requests</text>
+  <text x="${PAD}" y="112" class="header-title">Unanswered Script Request</text>
   <text x="${PAD}" y="152" class="header-sub">Wikipedia:User scripts/Requests  •  ${esc(
     new Date().toISOString().replace("T", " ").substring(0, 16) + " UTC",
   )}</text>
