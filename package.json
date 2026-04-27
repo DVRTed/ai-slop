@@ -6,7 +6,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node main.js"
+    "start": "node src/index.js"
   },
   "dependencies": {
     "cheerio": "^1.2.0",
