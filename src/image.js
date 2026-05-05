@@ -210,17 +210,26 @@ export async function generateANIImage(incidents) {
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
+function estimateUSRHeight(request) {
+  if (!request) return 200;
+  const titleLines = wrap(request.title, 60).length;
+  const summaryLines = Math.min(wrap(request.description, 80).length, 3);
+  const detailsLines = Math.min(wrap(request.details, 78).length, 4);
+  return 80 + titleLines * 52 + 80 + summaryLines * 34 + 60 + detailsLines * 30 + 160;
+}
+
 export async function generateUSRImage(requests) {
   const request = requests[0];
-  const canvas = createCanvas(W, 600);
+  const H = estimateUSRHeight(request);
+  const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
 
   // Background with gradient
-  const bgGrad = ctx.createLinearGradient(0, 0, 0, 600);
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
   bgGrad.addColorStop(0, "#0f172a");
   bgGrad.addColorStop(1, "#020617");
   ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, W, 600);
+  ctx.fillRect(0, 0, W, H);
 
   // Background glows
   const gradA = ctx.createRadialGradient(W * 0.2, 100, 0, W * 0.2, 100, 300);
