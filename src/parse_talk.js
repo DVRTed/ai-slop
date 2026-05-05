@@ -12,6 +12,11 @@ async function fetch_dt_data(page) {
     },
   });
 
+  if (!res.ok) {
+    console.error(`Wikipedia API error: ${res.status} ${res.statusText}`);
+    return null;
+  }
+
   try {
     const json = await res.json();
     return json.discussiontoolspageinfo.threaditemshtml;

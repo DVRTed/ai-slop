@@ -49,8 +49,13 @@ async function callGemini(prompt) {
     throw new Error("Missing Gemini response content");
   }
 
-  return JSON.parse(text);
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Gemini returned invalid JSON: ${text.substring(0, 200)}`);
+  }
 }
+
 function compileThreadsForPrompt(threads) {
   return threads
     .map((thread) => {
