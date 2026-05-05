@@ -6,12 +6,13 @@ async function callGemini(prompt) {
     throw new Error("Missing env: GEMINI_API_KEY");
   }
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-    {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+  const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY,
       },
       body: JSON.stringify({
         systemInstruction: {
@@ -38,7 +39,7 @@ async function callGemini(prompt) {
   if (!res.ok) {
     const body = await res.text();
     throw new Error(
-      `Gemini API error: ${res.status} ${res.statusText}: ${body}`,
+      `Gemini API error (${url}): ${res.status} ${res.statusText}: ${body}`,
     );
   }
 
