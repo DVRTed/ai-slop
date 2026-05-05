@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { fetch_talk_threads } from "./parse_talk.js";
-import { analyzeANI, analyzeUSR } from "./groq.js";
+import { analyzeANI, analyzeUSR } from "./gemini.js";
 import { generateANIImage, generateUSRImage } from "./image.js";
 import { sendToDiscord } from "./discord.js";
 
@@ -21,17 +21,21 @@ async function main() {
     fetch_talk_threads(PAGES.USR),
   ]);
 
-  console.log(`ANI: ${aniThreads.length} threads | USR: ${usrThreads.length} threads`);
+  console.log(
+    `ANI: ${aniThreads.length} threads | USR: ${usrThreads.length} threads`,
+  );
 
-  console.log("Asking Groq for ANI...");
+  console.log("Asking Gemini for ANI...");
   const incidents = await analyzeANI(aniThreads);
 
   console.log("Waiting 10 seconds to avoid rate limits...");
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  console.log("Asking Groq for USR...");
+  console.log("Asking Gemini for USR...");
   const requests = await analyzeUSR(usrThreads);
-  console.log(`Got ${incidents?.length || 0} incidents, ${requests?.length || 0} requests`);
+  console.log(
+    `Got ${incidents?.length || 0} incidents, ${requests?.length || 0} requests`,
+  );
 
   console.log("Generating images...");
   const [aniImage, usrImage] = await Promise.all([
