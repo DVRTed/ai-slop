@@ -68,7 +68,10 @@ function wrap(text, maxChars) {
 
 function textLines(lines, x, startY, lh, className) {
   return lines
-    .map((line, i) => `<text x="${x}" y="${startY + i * lh}" class="${className}">${esc(line)}</text>`)
+    .map(
+      (line, i) =>
+        `<text x="${x}" y="${startY + i * lh}" class="${className}">${esc(line)}</text>`,
+    )
     .join("\n");
 }
 
@@ -112,7 +115,17 @@ export async function generateANIImage(incidents) {
     const partsH = parts ? PARTS_LH : 0;
     const descH = summaryLines.length * DESC_LH;
     const outcomeH = outcomeLines.length * 28;
-    const h = CP + titleH + (parts ? 12 : 0) + partsH + 24 + descH + 36 + outcomeH + 20 + CP;
+    const h =
+      CP +
+      titleH +
+      (parts ? 12 : 0) +
+      partsH +
+      24 +
+      descH +
+      36 +
+      outcomeH +
+      20 +
+      CP;
 
     return {
       ...inc,
@@ -139,8 +152,16 @@ export async function generateANIImage(incidents) {
 
       const titleY = cy + CP + 34;
       const partsY = cy + CP + card.titleH + 22;
-      const descStartY = cy + CP + card.titleH + (card.parts ? 12 + card.partsH : 0) + 30;
-      const dotsY = cy + CP + card.titleH + (card.parts ? 12 + card.partsH : 0) + 24 + card.descH + 50;
+      const descStartY =
+        cy + CP + card.titleH + (card.parts ? 12 + card.partsH : 0) + 30;
+      const dotsY =
+        cy +
+        CP +
+        card.titleH +
+        (card.parts ? 12 + card.partsH : 0) +
+        24 +
+        card.descH +
+        50;
 
       const pax = PAD + 48 + 112;
       const txtOut = String(card.outcome || "").trim();
@@ -163,7 +184,10 @@ export async function generateANIImage(incidents) {
     ${
       hasOut
         ? card.outcomeLines
-            .map((line, i) => `<text x="${pax}" y="${dotsY + 6 + i * 28}" class="meta" style="fill: #f87171; font-weight: 600">${esc(line)}</text>`)
+            .map(
+              (line, i) =>
+                `<text x="${pax}" y="${dotsY + 6 + i * 28}" class="meta" style="fill: #f87171; font-weight: 600">${esc(line)}</text>`,
+            )
             .join("\n")
         : ""
     }
@@ -218,7 +242,9 @@ export async function generateUSRImage(requests) {
   // Title
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 40px Arial";
-  const titleLines = request ? wrap(request.title, 60) : ["No unresolved request found"];
+  const titleLines = request
+    ? wrap(request.title, 60)
+    : ["No unresolved request found"];
   let y = 80;
   for (const line of titleLines) {
     ctx.fillText(line, 64, y);
@@ -285,7 +311,11 @@ export async function generateUSRImage(requests) {
     ctx.fillText("COMPLEXITY", 290, y + 68);
     ctx.fillStyle = "#ffffff";
     ctx.font = "600 16px Arial";
-    ctx.fillText(`${request.difficulty} • ${request.timeEstimate}`, 290, y + 88);
+    ctx.fillText(
+      `${request.difficulty} • ${request.timeEstimate}`,
+      290,
+      y + 88,
+    );
   }
 
   return canvas.toBuffer("image/png");
