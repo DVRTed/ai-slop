@@ -104,21 +104,27 @@ export async function generateANIImage(incidents) {
     const titleLines = wrap(inc.title, 75);
     const summaryLines = wrap(inc.summary, 100).slice(0, 5);
     const parts = (inc.participants ?? []).slice(0, 4).join(", ");
+    const txtOut = String(inc.outcome || "").trim();
+    const hasOut = !!txtOut;
+    const outcomeLines = hasOut ? wrap(`Outcome: ${txtOut}`, 85) : [];
 
     const titleH = titleLines.length * TITLE_LH;
     const partsH = parts ? PARTS_LH : 0;
     const descH = summaryLines.length * DESC_LH;
-    const h = CP + titleH + (parts ? 12 : 0) + partsH + 24 + descH + 36 + 20 + CP;
+    const outcomeH = outcomeLines.length * 28;
+    const h = CP + titleH + (parts ? 12 : 0) + partsH + 24 + descH + 36 + outcomeH + 20 + CP;
 
     return {
       ...inc,
       titleLines,
       summaryLines,
       parts,
+      outcomeLines,
       cardH: h,
       titleH,
       partsH,
       descH,
+      outcomeH,
     };
   });
 
@@ -138,9 +144,7 @@ export async function generateANIImage(incidents) {
 
       const pax = PAD + 48 + 112;
       const txtOut = String(card.outcome || "").trim();
-      const hasOut =
-        txtOut &&
-        !["null", "none", "n/a", "none yet", "unresolved", "pending"].includes(txtOut.toLowerCase());
+      const hasOut = !!txtOut;
 
       return `
     <rect x="${PAD}" y="${cy}" width="${IW}" height="${card.cardH}" rx="20" fill="#09090b" filter="url(#shadow)"/>
@@ -158,9 +162,9 @@ export async function generateANIImage(incidents) {
     ${dramaBar(card.dramaScore, PAD + 48, dotsY)}
     ${
       hasOut
-        ? `<text x="${pax}" y="${dotsY + 6}" class="meta" style="fill: #f87171; font-weight: 600">Outcome: ${esc(
-            txtOut,
-          )}</text>`
+        ? card.outcomeLines
+            .map((line, i) => `<text x="${pax}" y="${dotsY + 6 + i * 28}" class="meta" style="fill: #f87171; font-weight: 600">${esc(line)}</text>`)
+            .join("\n")
         : ""
     }
     `;

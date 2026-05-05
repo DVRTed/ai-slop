@@ -81,7 +81,7 @@ Each item:
   "summary": "3-5 sentences: who is involved, what the dispute is, and why it is heated",
   "dramaScore": 1 | 2 | 3,
   "participants": ["up to 4 usernames mentioned in the section"],
-  "outcome": "exact outcome, or null if unknown"
+  "outcome": "very brief summary of what action was taken, if any; if it's ongoing or unresolved, say so."
 }
 
 SECTIONS:
