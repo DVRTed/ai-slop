@@ -15,10 +15,10 @@ export async function sendToDiscord(webhookUrl, aniBuffer, usrBuffer) {
 
     if (!res.ok) {
       const text = await res.text();
-      console.error(`Discord webhook failed for ${name}: ${res.status} - ${text}`);
-    } else {
-      console.log(`Sent ${name} to Discord successfully.`);
+      throw new Error(`Discord webhook failed for ${name}: ${res.status} - ${text}`);
     }
+
+    console.log(`Sent ${name} to Discord successfully.`);
 
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
