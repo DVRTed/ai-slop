@@ -24,6 +24,11 @@ export async function sendToDiscord(webhookUrl, aniBuffer, usrBuffer) {
   }
 }
 
+function truncate(str, max = 1024) {
+  if (!str) return "-";
+  return str.length > max ? str.substring(0, max - 3) + "..." : str;
+}
+
 export async function sendNewsEmbed(webhookUrl, hantavirus, news) {
   const hasHantaError = hantavirus.error === true;
   const hasNewsError = news.error === true;
@@ -57,22 +62,24 @@ export async function sendNewsEmbed(webhookUrl, hantavirus, news) {
     fields: [
       {
         name: hasHantaError ? "\u26a0\ufe0f Hantavirus Status" : "\ud83e\uddea Hantavirus Status",
-        value: hantaValue,
+        value: truncate(hantaValue),
         inline: false,
       },
       {
         name: hasNewsError ? "\u26a0\ufe0f Top Breaking News" : "\ud83d\udcf0 Top Breaking News",
-        value: newsValue,
+        value: truncate(newsValue),
         inline: false,
       },
       {
         name: "Sources",
-        value: sourcesText,
+        value: truncate(sourcesText),
         inline: false,
       },
     ],
     timestamp: new Date().toISOString(),
   };
+
+  console.log("Embed payload:", JSON.stringify(embed, null, 2));
 
   const res = await fetch(webhookUrl, {
     method: "POST",
