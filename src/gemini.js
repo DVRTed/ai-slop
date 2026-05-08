@@ -1,12 +1,50 @@
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-async function callGemini(prompt) {
+async function resolveRedirectUrl(redirectUrl) {
+  try {
+    const response = await fetch(redirectUrl, {
+      method: 'HEAD',
+      redirect: 'follow'
+    });
+    return response.url;
+  } catch (err) {
+    console.error(`Failed to resolve redirect: ${err.message}`);
+    return redirectUrl; // Return original if resolution fails
+  }
+}
+
+async function callGemini(prompt, useSearch = false) {
   if (!GEMINI_API_KEY) {
     throw new Error("Missing env: GEMINI_API_KEY");
   }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+  const requestBody = {
+    systemInstruction: {
+      parts: [
+        {
+          text: "Respond with valid JSON only. Do not add any explanation, notes, or extra fields.",
+        },
+      ],
+    },
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
+    generationConfig: {
+      temperature: 0,
+      responseMimeType: "application/json",
+    },
+  };
+
+  if (useSearch) {
+    requestBody.tools = [{ googleSearch: {} }];
+    delete requestBody.generationConfig.responseMimeType;
+  }
 
   const res = await fetch(url, {
       method: "POST",
@@ -14,25 +52,7 @@ async function callGemini(prompt) {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_API_KEY,
       },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [
-            {
-              text: "Respond with valid JSON only. Do not add any explanation, notes, or extra fields.",
-            },
-          ],
-        },
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0,
-          responseMimeType: "application/json",
-        },
-      }),
+      body: JSON.stringify(requestBody),
     },
   );
 
@@ -50,8 +70,14 @@ async function callGemini(prompt) {
     throw new Error("Missing Gemini response content");
   }
 
+  let jsonText = text.trim();
+  const fenceMatch = jsonText.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+  if (fenceMatch) {
+    jsonText = fenceMatch[1].trim();
+  }
+
   try {
-    return JSON.parse(text);
+    return JSON.parse(jsonText);
   } catch {
     throw new Error(`Gemini returned invalid JSON: ${text.substring(0, 200)}`);
   }
@@ -133,4 +159,99 @@ ${promptText}`);
 
   console.log("called for usr");
   return requests;
+}
+
+export async function fetchHantavirusUpdate() {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const result = await callGemini(`
+Today is ${today}.
+Using Google Search, find the latest hantavirus stats.
+
+Return JSON only:
+{
+  "hantavirus": {
+    "confirmed": number of confirmed cases this year,
+    "deaths": number of deaths this year,
+    "suspected": number of suspected cases this year,
+    "outbreak": "ONE brief sentence about a major ongoing outbreak, or null if none",
+    "lastUpdated": "the date of the most recent data you have",
+    "sources": [
+      { "name": "source name (e.g. WHO, CDC)", "url": "direct URL to the source" }
+    ]
+  }
+}
+
+IMPORTANT: Keep it to just the numbers. No explanations or background info.`, true);
+
+    if (!result.hantavirus || result.hantavirus.confirmed === undefined) {
+      console.error("Gemini returned invalid hantavirus data:", JSON.stringify(result));
+      return { error: true, summary: "Failed to retrieve hantavirus data: unexpected response format." };
+    }
+
+    if (!Array.isArray(result.hantavirus.sources)) {
+      result.hantavirus.sources = [];
+    }
+
+    // Resolve redirect URLs
+    result.hantavirus.sources = await Promise.all(
+      result.hantavirus.sources.map(async (source) => ({
+        ...source,
+        url: await resolveRedirectUrl(source.url)
+      }))
+    );
+
+    return result.hantavirus;
+  } catch (err) {
+    console.error("Hantavirus Gemini call failed:", err.message);
+    return { error: true, summary: "Failed to retrieve hantavirus data: Gemini API error." };
+  }
+}
+
+export async function fetchTopBreakingNews() {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const result = await callGemini(`
+Today is ${today}.
+Using Google Search, find the single BIGGEST, most significant breaking news story in the world today.
+Pick only ONE story that is the most impactful globally.
+Use real URLs from the search results you find.
+
+Return JSON only:
+{
+  "news": {
+    "title": "headline of the news story",
+    "description": "2-3 sentence summary of what happened and why it matters",
+    "sources": [
+      { "name": "outlet name eg CNN, BBC, Reuters", "url": "direct URL from search results" },
+      { "name": "outlet name", "url": "direct URL from search results" },
+      { "name": "outlet name", "url": "direct URL from search results" }
+    ]
+  }
+}
+
+Provide at least 3 credible news sources with real, direct URLs from your search results.`, true);
+
+    if (!result.news || !result.news.title || !result.news.description) {
+      console.error("Gemini returned invalid news data:", JSON.stringify(result));
+      return { error: true, title: "Error", description: "Failed to retrieve news: unexpected response format.", sources: [] };
+    }
+
+    if (!Array.isArray(result.news.sources)) {
+      result.news.sources = [];
+    }
+
+    // Resolve redirect URLs
+    result.news.sources = await Promise.all(
+      result.news.sources.map(async (source) => ({
+        ...source,
+        url: await resolveRedirectUrl(source.url)
+      }))
+    );
+
+    return result.news;
+  } catch (err) {
+    console.error("Breaking news Gemini call failed:", err.message);
+    return { error: true, title: "Error", description: "Failed to retrieve news: Gemini API error.", sources: [] };
+  }
 }
