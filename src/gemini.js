@@ -170,7 +170,7 @@ Return JSON only:
 
     if (!result.hantavirus || !result.hantavirus.summary) {
       console.error("Gemini returned invalid hantavirus data:", JSON.stringify(result));
-      return { error: true, summary: "Failed to retrieve hantavirus data: Gemini returned an unexpected response format." };
+      return { error: true, summary: "Failed to retrieve hantavirus data: unexpected response format." };
     }
 
     if (!Array.isArray(result.hantavirus.sources)) {
@@ -180,7 +180,7 @@ Return JSON only:
     return result.hantavirus;
   } catch (err) {
     console.error("Hantavirus Gemini call failed:", err.message);
-    return { error: true, summary: `Failed to retrieve hantavirus data: ${err.message}` };
+    return { error: true, summary: "Failed to retrieve hantavirus data: Gemini API error." };
   }
 }
 
@@ -210,7 +210,7 @@ Provide at least 3 credible news sources with real, direct URLs from your search
 
     if (!result.news || !result.news.title || !result.news.description) {
       console.error("Gemini returned invalid news data:", JSON.stringify(result));
-      return { error: true, title: "Error", description: "Failed to retrieve news: Gemini returned an unexpected response format.", sources: [] };
+      return { error: true, title: "Error", description: "Failed to retrieve news: unexpected response format.", sources: [] };
     }
 
     if (!Array.isArray(result.news.sources)) {
@@ -220,6 +220,6 @@ Provide at least 3 credible news sources with real, direct URLs from your search
     return result.news;
   } catch (err) {
     console.error("Breaking news Gemini call failed:", err.message);
-    return { error: true, title: "Error", description: `Failed to retrieve news: ${err.message}`, sources: [] };
+    return { error: true, title: "Error", description: "Failed to retrieve news: Gemini API error.", sources: [] };
   }
 }
