@@ -28,6 +28,9 @@ async function main() {
   console.log("Asking Gemini for ANI...");
   const incidents = await analyzeANI(aniThreads);
 
+  console.log("Waiting 10 seconds to avoid rate limits...");
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
   console.log("Asking Gemini for USR...");
   const requests = await analyzeUSR(usrThreads);
   console.log(
@@ -43,8 +46,14 @@ async function main() {
   console.log("Sending images to Discord...");
   await sendToDiscord(DISCORD_WEBHOOK_URL, aniImage, usrImage);
 
+  console.log("Waiting 10 seconds to avoid rate limits...");
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
   console.log("Asking Gemini for hantavirus update...");
   const hantavirus = await fetchHantavirusUpdate();
+
+  console.log("Waiting 10 seconds to avoid rate limits...");
+  await new Promise((resolve) => setTimeout(resolve, 10000));
 
   console.log("Asking Gemini for top breaking news...");
   const news = await fetchTopBreakingNews();
