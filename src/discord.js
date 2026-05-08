@@ -29,11 +29,17 @@ export async function sendNewsEmbed(webhookUrl, hantavirus, news) {
   const hasNewsError = news.error === true;
   const hasAnyError = hasHantaError || hasNewsError;
 
+  const hantaSources = hasHantaError
+    ? ""
+    : (hantavirus.sources || [])
+        .map((s, i) => `${i + 1}. **${s.name}**: ${s.url}`)
+        .join("\n");
+
   const hantaValue = hasHantaError
     ? `\u26a0\ufe0f ${hantavirus.summary}`
-    : hantavirus.summary + (hantavirus.lastUpdated
-      ? `\n*Last updated: ${hantavirus.lastUpdated}*`
-      : "");
+    : hantavirus.summary
+      + (hantavirus.lastUpdated ? `\n*Last updated: ${hantavirus.lastUpdated}*` : "")
+      + (hantaSources ? `\n\n${hantaSources}` : "");
 
   const newsValue = hasNewsError
     ? `\u26a0\ufe0f ${news.description}`
