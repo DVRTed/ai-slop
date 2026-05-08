@@ -30,6 +30,7 @@ async function callGemini(prompt, useSearch = false) {
 
   if (useSearch) {
     requestBody.tools = [{ googleSearch: {} }];
+    delete requestBody.generationConfig.responseMimeType;
   }
 
   const res = await fetch(url, {
@@ -56,8 +57,14 @@ async function callGemini(prompt, useSearch = false) {
     throw new Error("Missing Gemini response content");
   }
 
+  let jsonText = text.trim();
+  const fenceMatch = jsonText.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+  if (fenceMatch) {
+    jsonText = fenceMatch[1].trim();
+  }
+
   try {
-    return JSON.parse(text);
+    return JSON.parse(jsonText);
   } catch {
     throw new Error(`Gemini returned invalid JSON: ${text.substring(0, 200)}`);
   }
