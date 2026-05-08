@@ -134,3 +134,47 @@ ${promptText}`);
   console.log("called for usr");
   return requests;
 }
+
+export async function fetchHantavirusUpdate() {
+  const today = new Date().toISOString().split("T")[0];
+  const { hantavirus } = await callGemini(`
+Today is ${today}.
+What are the current global hantavirus stats and situation as of today?
+Include: total known cases this year, recent outbreaks, affected regions, fatality rate, and any notable developments.
+If you don't have exact numbers for today, provide the most recent known data and note the date.
+
+Return JSON only:
+{
+  "hantavirus": {
+    "summary": "2-4 sentence overview of the current hantavirus situation globally",
+    "lastUpdated": "the date of the most recent data you have"
+  }
+}`);
+
+  return hantavirus;
+}
+
+export async function fetchTopBreakingNews() {
+  const today = new Date().toISOString().split("T")[0];
+  const { news } = await callGemini(`
+Today is ${today}.
+What is the single BIGGEST, most significant breaking news story in the world today?
+Pick only ONE story that is the most impactful globally.
+
+Return JSON only:
+{
+  "news": {
+    "title": "headline of the news story",
+    "description": "2-3 sentence summary of what happened and why it matters",
+    "sources": [
+      { "name": "outlet name eg CNN, BBC, Reuters", "url": "direct URL to their article about this story" },
+      { "name": "outlet name", "url": "direct URL" },
+      { "name": "outlet name", "url": "direct URL" }
+    ]
+  }
+}
+
+Provide at least 3 credible news sources with real, direct URLs to articles about this story.`);
+
+  return news;
+}

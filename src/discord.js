@@ -23,3 +23,47 @@ export async function sendToDiscord(webhookUrl, aniBuffer, usrBuffer) {
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
 }
+
+export async function sendNewsEmbed(webhookUrl, hantavirus, news) {
+  const sourcesText = (news.sources || [])
+    .map((s, i) => `${i + 1}. **${s.name}**: ${s.url}`)
+    .join("\n");
+
+  const embed = {
+    title: "\ud83c\udf0d Daily Briefing",
+    color: 0x2f3136,
+    fields: [
+      {
+        name: "\ud83e\uddea Hantavirus Status",
+        value: hantavirus.summary + (hantavirus.lastUpdated
+          ? `\n*Last updated: ${hantavirus.lastUpdated}*`
+          : ""),
+        inline: false,
+      },
+      {
+        name: "\ud83d\udcf0 Top Breaking News",
+        value: `**${news.title}**\n${news.description}`,
+        inline: false,
+      },
+      {
+        name: "Sources",
+        value: sourcesText || "No sources available",
+        inline: false,
+      },
+    ],
+    timestamp: new Date().toISOString(),
+  };
+
+  const res = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ embeds: [embed] }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Discord webhook failed for news embed: ${res.status} - ${text}`);
+  }
+
+  console.log("Sent news embed to Discord successfully.");
+}
