@@ -1,6 +1,19 @@
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+async function resolveRedirectUrl(redirectUrl) {
+  try {
+    const response = await fetch(redirectUrl, {
+      method: 'HEAD',
+      redirect: 'follow'
+    });
+    return response.url;
+  } catch (err) {
+    console.error(`Failed to resolve redirect: ${err.message}`);
+    return redirectUrl; // Return original if resolution fails
+  }
+}
+
 async function callGemini(prompt, useSearch = false) {
   if (!GEMINI_API_KEY) {
     throw new Error("Missing env: GEMINI_API_KEY");
@@ -180,6 +193,14 @@ IMPORTANT: Keep it to just the numbers. No explanations or background info.`, tr
       result.hantavirus.sources = [];
     }
 
+    // Resolve redirect URLs
+    result.hantavirus.sources = await Promise.all(
+      result.hantavirus.sources.map(async (source) => ({
+        ...source,
+        url: await resolveRedirectUrl(source.url)
+      }))
+    );
+
     return result.hantavirus;
   } catch (err) {
     console.error("Hantavirus Gemini call failed:", err.message);
@@ -219,6 +240,14 @@ Provide at least 3 credible news sources with real, direct URLs from your search
     if (!Array.isArray(result.news.sources)) {
       result.news.sources = [];
     }
+
+    // Resolve redirect URLs
+    result.news.sources = await Promise.all(
+      result.news.sources.map(async (source) => ({
+        ...source,
+        url: await resolveRedirectUrl(source.url)
+      }))
+    );
 
     return result.news;
   } catch (err) {
