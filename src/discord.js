@@ -34,17 +34,29 @@ export async function sendNewsEmbed(webhookUrl, hantavirus, news) {
   const hasNewsError = news.error === true;
   const hasAnyError = hasHantaError || hasNewsError;
 
-  const hantaSources = hasHantaError
-    ? ""
-    : (hantavirus.sources || [])
-        .map((s, i) => `${i + 1}. **${s.name}**: ${s.url}`)
-        .join("\n");
-
-  const hantaValue = hasHantaError
-    ? `\u26a0\ufe0f ${hantavirus.summary}`
-    : hantavirus.summary
-      + (hantavirus.lastUpdated ? `\n*Last updated: ${hantavirus.lastUpdated}*` : "")
-      + (hantaSources ? `\n\n${hantaSources}` : "");
+  let hantaValue;
+  if (hasHantaError) {
+    hantaValue = `\u26a0\ufe0f ${hantavirus.summary}`;
+  } else {
+    const lines = [
+      `**Confirmed:** ${hantavirus.confirmed ?? "N/A"}`,
+      `**Deaths:** ${hantavirus.deaths ?? "N/A"}`,
+      `**Suspected:** ${hantavirus.suspected ?? "N/A"}`,
+    ];
+    if (hantavirus.outbreak) {
+      lines.push(`\n${hantavirus.outbreak}`);
+    }
+    if (hantavirus.lastUpdated) {
+      lines.push(`\n*Last updated: ${hantavirus.lastUpdated}*`);
+    }
+    const hantaSources = (hantavirus.sources || [])
+      .map((s, i) => `${i + 1}. **${s.name}**: ${s.url}`)
+      .join("\n");
+    if (hantaSources) {
+      lines.push(`\n${hantaSources}`);
+    }
+    hantaValue = lines.join("\n");
+  }
 
   const newsValue = hasNewsError
     ? `\u26a0\ufe0f ${news.description}`

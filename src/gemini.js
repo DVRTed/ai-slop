@@ -153,22 +153,25 @@ export async function fetchHantavirusUpdate() {
     const today = new Date().toISOString().split("T")[0];
     const result = await callGemini(`
 Today is ${today}.
-Using Google Search, find the latest hantavirus stats and situation.
-Include: total known cases this year, recent outbreaks, affected regions, fatality rate, and any notable developments.
-Provide the most recent data available and note the date.
+Using Google Search, find the latest hantavirus stats.
 
 Return JSON only:
 {
   "hantavirus": {
-    "summary": "2-4 sentence overview of the current hantavirus situation globally",
+    "confirmed": number of confirmed cases this year,
+    "deaths": number of deaths this year,
+    "suspected": number of suspected cases this year,
+    "outbreak": "ONE brief sentence about a major ongoing outbreak, or null if none",
     "lastUpdated": "the date of the most recent data you have",
     "sources": [
       { "name": "source name (e.g. WHO, CDC)", "url": "direct URL to the source" }
     ]
   }
-}`, true);
+}
 
-    if (!result.hantavirus || !result.hantavirus.summary) {
+IMPORTANT: Keep it to just the numbers. No explanations or background info.`, true);
+
+    if (!result.hantavirus || result.hantavirus.confirmed === undefined) {
       console.error("Gemini returned invalid hantavirus data:", JSON.stringify(result));
       return { error: true, summary: "Failed to retrieve hantavirus data: unexpected response format." };
     }
