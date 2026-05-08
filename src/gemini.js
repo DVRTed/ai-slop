@@ -136,8 +136,9 @@ ${promptText}`);
 }
 
 export async function fetchHantavirusUpdate() {
-  const today = new Date().toISOString().split("T")[0];
-  const { hantavirus } = await callGemini(`
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const result = await callGemini(`
 Today is ${today}.
 What are the current global hantavirus stats and situation as of today?
 Include: total known cases this year, recent outbreaks, affected regions, fatality rate, and any notable developments.
@@ -151,12 +152,22 @@ Return JSON only:
   }
 }`);
 
-  return hantavirus;
+    if (!result.hantavirus || !result.hantavirus.summary) {
+      console.error("Gemini returned invalid hantavirus data:", JSON.stringify(result));
+      return { error: true, summary: "Failed to retrieve hantavirus data: Gemini returned an unexpected response format." };
+    }
+
+    return result.hantavirus;
+  } catch (err) {
+    console.error("Hantavirus Gemini call failed:", err.message);
+    return { error: true, summary: `Failed to retrieve hantavirus data: ${err.message}` };
+  }
 }
 
 export async function fetchTopBreakingNews() {
-  const today = new Date().toISOString().split("T")[0];
-  const { news } = await callGemini(`
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const result = await callGemini(`
 Today is ${today}.
 What is the single BIGGEST, most significant breaking news story in the world today?
 Pick only ONE story that is the most impactful globally.
@@ -176,5 +187,18 @@ Return JSON only:
 
 Provide at least 3 credible news sources with real, direct URLs to articles about this story.`);
 
-  return news;
+    if (!result.news || !result.news.title || !result.news.description) {
+      console.error("Gemini returned invalid news data:", JSON.stringify(result));
+      return { error: true, title: "Error", description: "Failed to retrieve news: Gemini returned an unexpected response format.", sources: [] };
+    }
+
+    if (!Array.isArray(result.news.sources)) {
+      result.news.sources = [];
+    }
+
+    return result.news;
+  } catch (err) {
+    console.error("Breaking news Gemini call failed:", err.message);
+    return { error: true, title: "Error", description: `Failed to retrieve news: ${err.message}`, sources: [] };
+  }
 }
