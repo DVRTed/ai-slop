@@ -15,7 +15,9 @@ export async function sendToDiscord(webhookUrl, aniBuffer, usrBuffer) {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Discord webhook failed for ${name}: ${res.status} - ${text}`);
+      throw new Error(
+        `Discord webhook failed for ${name}: ${res.status} - ${text}`,
+      );
     }
 
     console.log(`Sent ${name} to Discord successfully.`);
@@ -50,7 +52,7 @@ export async function sendNewsEmbed(webhookUrl, hantavirus, news) {
       lines.push(`\n*Last updated: ${hantavirus.lastUpdated}*`);
     }
     const hantaSources = (hantavirus.sources || [])
-      .map((s, i) => `${i + 1}. **${s.name}**: ${s.url}`)
+      .map((s, i) => `${i + 1}. [${s.name}](${s.url})`)
       .join("\n");
     if (hantaSources) {
       lines.push(`\n${hantaSources}`);
@@ -65,7 +67,7 @@ export async function sendNewsEmbed(webhookUrl, hantavirus, news) {
   const sourcesText = hasNewsError
     ? "No sources available"
     : (news.sources || [])
-        .map((s, i) => `${i + 1}. **${s.name}**: ${s.url}`)
+        .map((s, i) => `${i + 1}. [${s.name}](${s.url})`)
         .join("\n") || "No sources available";
 
   const embed = {
@@ -73,12 +75,16 @@ export async function sendNewsEmbed(webhookUrl, hantavirus, news) {
     color: hasAnyError ? 0xed4245 : 0x2f3136,
     fields: [
       {
-        name: hasHantaError ? "\u26a0\ufe0f Hantavirus Status" : "\ud83e\uddea Hantavirus Status",
+        name: hasHantaError
+          ? "\u26a0\ufe0f Hantavirus Status"
+          : "\ud83e\uddea Hantavirus Status",
         value: truncate(hantaValue),
         inline: false,
       },
       {
-        name: hasNewsError ? "\u26a0\ufe0f Top Breaking News" : "\ud83d\udcf0 Top Breaking News",
+        name: hasNewsError
+          ? "\u26a0\ufe0f Top Breaking News"
+          : "\ud83d\udcf0 Top Breaking News",
         value: truncate(newsValue),
         inline: false,
       },
@@ -101,7 +107,9 @@ export async function sendNewsEmbed(webhookUrl, hantavirus, news) {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Discord webhook failed for news embed: ${res.status} - ${text}`);
+    throw new Error(
+      `Discord webhook failed for news embed: ${res.status} - ${text}`,
+    );
   }
 
   console.log("Sent news embed to Discord successfully.");
