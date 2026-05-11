@@ -131,7 +131,7 @@ export async function analyzeUSR(threads) {
   const { requests } = await callGemini(`
 You are reviewing WP:US/R sections.
 Select exactly one request that is truly ignored and unresolved.
-If multiple qualify, choose one randomly.
+If multiple qualify, choose one randomly but prioritize the most recent one.
 
 Skip any section if it contains:
 - a script, code sample, or workaround suggestion
