@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { fetch_talk_threads } from "./parse_talk.js";
-import { analyzeANI, analyzeUSR, fetchHantavirusUpdate, fetchTopBreakingNews } from "./gemini.js";
+import { analyzeANI, analyzeUSR, checkJudeBellinghamMatch } from "./gemini.js";
 import { generateANIImage, generateUSRImage } from "./image.js";
-import { sendToDiscord, sendNewsEmbed } from "./discord.js";
+import { sendToDiscord, sendJudeBellinghamEmbed } from "./discord.js";
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 const PAGES = {
@@ -49,17 +49,11 @@ async function main() {
   console.log("Waiting 10 seconds to avoid rate limits...");
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  console.log("Asking Gemini for hantavirus update...");
-  const hantavirus = await fetchHantavirusUpdate();
+  console.log("Checking Jude Bellingham's upcoming matches...");
+  const matchInfo = await checkJudeBellinghamMatch();
 
-  console.log("Waiting 10 seconds to avoid rate limits...");
-  await new Promise((resolve) => setTimeout(resolve, 10000));
-
-  console.log("Asking Gemini for top breaking news...");
-  const news = await fetchTopBreakingNews();
-
-  console.log("Sending news embed to Discord...");
-  await sendNewsEmbed(DISCORD_WEBHOOK_URL, hantavirus, news);
+  console.log("Sending Jude Bellingham embed to Discord...");
+  await sendJudeBellinghamEmbed(DISCORD_WEBHOOK_URL, matchInfo);
   console.log("Done!");
 }
 
