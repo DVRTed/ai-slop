@@ -15,39 +15,39 @@ async function main() {
     throw new Error("Missing env: DISCORD_WEBHOOK_URL");
   }
 
-  console.log("Fetching Wikipedia pages with DiscussionTools...");
-  const [aniThreads, usrThreads] = await Promise.all([
-    fetch_talk_threads(PAGES.ANI),
-    fetch_talk_threads(PAGES.USR),
-  ]);
+  // console.log("Fetching Wikipedia pages with DiscussionTools...");
+  // const [aniThreads, usrThreads] = await Promise.all([
+  //   fetch_talk_threads(PAGES.ANI),
+  //   fetch_talk_threads(PAGES.USR),
+  // ]);
 
-  console.log(
-    `ANI: ${aniThreads.length} threads | USR: ${usrThreads.length} threads`,
-  );
+  // console.log(
+  //   `ANI: ${aniThreads.length} threads | USR: ${usrThreads.length} threads`,
+  // );
 
-  console.log("Asking Gemini for ANI...");
-  const incidents = await analyzeANI(aniThreads);
+  // console.log("Asking Gemini for ANI...");
+  // const incidents = await analyzeANI(aniThreads);
 
-  console.log("Waiting 10 seconds to avoid rate limits...");
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  // console.log("Waiting 10 seconds to avoid rate limits...");
+  // await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  console.log("Asking Gemini for USR...");
-  const requests = await analyzeUSR(usrThreads);
-  console.log(
-    `Got ${incidents?.length || 0} incidents, ${requests?.length || 0} requests`,
-  );
+  // console.log("Asking Gemini for USR...");
+  // const requests = await analyzeUSR(usrThreads);
+  // console.log(
+  //   `Got ${incidents?.length || 0} incidents, ${requests?.length || 0} requests`,
+  // );
 
-  console.log("Generating images...");
-  const [aniImage, usrImage] = await Promise.all([
-    generateANIImage(incidents || []),
-    generateUSRImage(requests || []),
-  ]);
+  // console.log("Generating images...");
+  // const [aniImage, usrImage] = await Promise.all([
+  //   generateANIImage(incidents || []),
+  //   generateUSRImage(requests || []),
+  // ]);
 
-  console.log("Sending images to Discord...");
-  await sendToDiscord(DISCORD_WEBHOOK_URL, aniImage, usrImage);
+  // console.log("Sending images to Discord...");
+  // await sendToDiscord(DISCORD_WEBHOOK_URL, aniImage, usrImage);
 
-  console.log("Waiting 10 seconds to avoid rate limits...");
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  // console.log("Waiting 10 seconds to avoid rate limits...");
+  // await new Promise((resolve) => setTimeout(resolve, 10000));
 
   console.log("Checking Jude Bellingham's upcoming matches...");
   const matchInfo = await checkJudeBellinghamMatch();
