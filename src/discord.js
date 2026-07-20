@@ -48,8 +48,8 @@ export async function sendJudeBellinghamEmbed(webhookUrl, matchInfo) {
         `🏆 **Competition:** ${matchInfo.competition}`,
       color: 0xffc400,
       thumbnail: {
-        url: "https://images.unsplash.com/photo-1548381528-7e459e3e2d4a?w=200",
-      },
+       url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Jude_Bellingham_England_v_Ghana_23_June_2026-061_%28cropped%29.jpg/500px-Jude_Bellingham_England_v_Ghana_23_June_2026-061_%28cropped%29.jpg",
+     },
       fields: [
         { name: "Home", value: "Real Madrid", inline: true },
         { name: "Away", value: matchInfo.opponent, inline: true },
