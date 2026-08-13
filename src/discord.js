@@ -47,14 +47,9 @@ export async function sendToDiscord(webhookUrl, aniBuffer, usrBuffer) {
 
 function randomYearMonth() {
   const startYear = 2014;
-  const now = new Date();
-  const currentYear = now.getUTCFullYear();
-  const currentMonth = now.getUTCMonth() + 1;
-
-  const year = startYear + Math.floor(Math.random() * (currentYear - startYear + 1));
-  const maxMonth = year === currentYear ? currentMonth : 12;
-  const minMonth = year === 2014 ? 1 : 1;
-  const month = minMonth + Math.floor(Math.random() * (maxMonth - minMonth + 1));
+  const endYear = 2024;
+  const year = startYear + Math.floor(Math.random() * (endYear - startYear + 1));
+  const month = 1 + Math.floor(Math.random() * 12);
 
   const mm = String(month).padStart(2, "0");
   const lastDay = new Date(year, month, 0).getDate();
@@ -90,39 +85,42 @@ export async function fetchRandomSarahsComic() {
 
       console.log(`Querying available comics between ${dateAfter} and ${dateBefore}…`);
 
-      const data = await page.evaluate(async (url) => {
-        const res = await fetch(url);
-        return res.ok ? res.json() : null;
-      }, apiUrl);
+      const apiRes = await context.request.get(apiUrl);
+      if (!apiRes.ok()) {
+        console.log("API returned non-OK status, retrying another month…");
+        continue;
+      }
 
+      const data = await apiRes.json();
       if (!data || !data.dates || data.dates.length === 0) {
         console.log("No comics published in this month, trying another month…");
         continue;
       }
 
       const randomIsoDate = data.dates[Math.floor(Math.random() * data.dates.length)];
-      const comicDate = new Date(randomIsoDate);
-      const yyyy = comicDate.getUTCFullYear();
-      const mm = String(comicDate.getUTCMonth() + 1).padStart(2, "0");
-      const dd = String(comicDate.getUTCDate()).padStart(2, "0");
+      const [yyyy, mm, dd] = randomIsoDate.split("T")[0].split("-");
+      const comicDate = new Date(Date.UTC(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd)));
       const pageUrl = `https://www.gocomics.com/sarahs-scribbles/${yyyy}/${mm}/${dd}`;
 
       console.log(`Fetching comic for ${yyyy}-${mm}-${dd}…`);
       await page.goto(pageUrl, { waitUntil: "domcontentloaded", timeout: 20000 });
-      await page.waitForTimeout(3000);
 
-      const imageUrl = await page.$$eval("img", (imgs) => {
-        const found = imgs.find(
-          (n) =>
-            n.src.includes("featureassets.gocomics.com") ||
-            n.src.includes("assets.amuniversal.com") ||
-            n.className.includes("comic__image"),
-        );
-        return found ? found.src : null;
-      });
+      const imgLocator = page
+        .locator(
+          "img[src*='featureassets.gocomics.com'], img[src*='assets.amuniversal.com'], img[class*='comic__image']",
+        )
+        .first();
 
-      if (!imageUrl) {
+      try {
+        await imgLocator.waitFor({ timeout: 10000 });
+      } catch {
         console.log("Comic image element not found, retrying…");
+        continue;
+      }
+
+      const imageUrl = await imgLocator.getAttribute("src");
+      if (!imageUrl) {
+        console.log("Empty image src, retrying…");
         continue;
       }
 
