@@ -12,6 +12,7 @@
     "canvas": "^3.2.3",
     "cheerio": "^1.2.0",
     "dotenv": "^16.4.0",
+    "playwright-core": "^1.62.1",
     "sharp": "^0.33.0"
   }
 }

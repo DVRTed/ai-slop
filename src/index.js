@@ -1,8 +1,6 @@
 import "dotenv/config";
 import { fetch_talk_threads } from "./parse_talk.js";
-import { analyzeANI, analyzeUSR, checkJudeBellinghamMatch } from "./gemini.js";
-import { generateANIImage, generateUSRImage } from "./image.js";
-import { sendToDiscord, sendJudeBellinghamEmbed } from "./discord.js";
+import { sendSarahsComic } from "./discord.js";
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 const PAGES = {
@@ -49,11 +47,8 @@ async function main() {
   // console.log("Waiting 10 seconds to avoid rate limits...");
   // await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  console.log("Checking Jude Bellingham's upcoming matches...");
-  const matchInfo = await checkJudeBellinghamMatch();
-
-  console.log("Sending Jude Bellingham embed to Discord...");
-  await sendJudeBellinghamEmbed(DISCORD_WEBHOOK_URL, matchInfo);
+  console.log("Fetching a random Sarah's Scribbles comic…");
+  await sendSarahsComic(DISCORD_WEBHOOK_URL);
   console.log("Done!");
 }
 
