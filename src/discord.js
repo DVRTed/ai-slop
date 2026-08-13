@@ -45,18 +45,23 @@ export async function sendToDiscord(webhookUrl, aniBuffer, usrBuffer) {
   }
 }
 
-function randomComicDate() {
-  const START = new Date("2014-01-27T00:00:00Z");
-  const END = new Date();
-  END.setUTCDate(END.getUTCDate() - 1);
-  while (true) {
-    const ms = START.getTime() + Math.floor(Math.random() * (END.getTime() - START.getTime()));
-    const d = new Date(ms);
-    const day = d.getUTCDay();
-    if (day === 1 || day === 3 || day === 6) {
-      return d;
-    }
-  }
+function randomYearMonth() {
+  const startYear = 2014;
+  const now = new Date();
+  const currentYear = now.getUTCFullYear();
+  const currentMonth = now.getUTCMonth() + 1;
+
+  const year = startYear + Math.floor(Math.random() * (currentYear - startYear + 1));
+  const maxMonth = year === currentYear ? currentMonth : 12;
+  const minMonth = year === 2014 ? 1 : 1;
+  const month = minMonth + Math.floor(Math.random() * (maxMonth - minMonth + 1));
+
+  const mm = String(month).padStart(2, "0");
+  const lastDay = new Date(year, month, 0).getDate();
+  const dateAfter = `${year}-${mm}-01`;
+  const dateBefore = `${year}-${mm}-${String(lastDay).padStart(2, "0")}`;
+
+  return { dateAfter, dateBefore };
 }
 
 export async function fetchRandomSarahsComic() {
@@ -72,29 +77,39 @@ export async function fetchRandomSarahsComic() {
     });
     const page = await context.newPage();
 
-    for (let attempt = 0; attempt < 15; attempt++) {
-      const comicDate = randomComicDate();
+    console.log("Navigating to GoComics to initialize session…");
+    await page.goto("https://www.gocomics.com/sarahs-scribbles", {
+      waitUntil: "domcontentloaded",
+      timeout: 20000,
+    });
+    await page.waitForTimeout(3000);
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const { dateAfter, dateBefore } = randomYearMonth();
+      const apiUrl = `https://www.gocomics.com/api/service/v2/assets/feature-runs/sarahs-scribbles?dateAfter=${dateAfter}&dateBefore=${dateBefore}`;
+
+      console.log(`Querying available comics between ${dateAfter} and ${dateBefore}…`);
+
+      const data = await page.evaluate(async (url) => {
+        const res = await fetch(url);
+        return res.ok ? res.json() : null;
+      }, apiUrl);
+
+      if (!data || !data.dates || data.dates.length === 0) {
+        console.log("No comics published in this month, trying another month…");
+        continue;
+      }
+
+      const randomIsoDate = data.dates[Math.floor(Math.random() * data.dates.length)];
+      const comicDate = new Date(randomIsoDate);
       const yyyy = comicDate.getUTCFullYear();
       const mm = String(comicDate.getUTCMonth() + 1).padStart(2, "0");
       const dd = String(comicDate.getUTCDate()).padStart(2, "0");
       const pageUrl = `https://www.gocomics.com/sarahs-scribbles/${yyyy}/${mm}/${dd}`;
 
-      console.log(`Trying ${yyyy}-${mm}-${dd}…`);
-
-      const res = await page.goto(pageUrl, { waitUntil: "domcontentloaded", timeout: 20000 });
-
-      if (res && res.status() === 404) {
-        console.log("No comic on that date (404), retrying…");
-        continue;
-      }
-
-      await page.waitForTimeout(4000);
-
-      const title = await page.title();
-      if (title.includes("404")) {
-        console.log("404 page title, retrying…");
-        continue;
-      }
+      console.log(`Fetching comic for ${yyyy}-${mm}-${dd}…`);
+      await page.goto(pageUrl, { waitUntil: "domcontentloaded", timeout: 20000 });
+      await page.waitForTimeout(3000);
 
       const imageUrl = await page.$$eval("img", (imgs) => {
         const found = imgs.find(
@@ -114,7 +129,7 @@ export async function fetchRandomSarahsComic() {
       return { imageUrl, comicDate, pageUrl };
     }
 
-    throw new Error("Failed to find a Sarah's Scribbles comic after multiple attempts.");
+    throw new Error("Failed to fetch a Sarah's Scribbles comic.");
   } finally {
     await browser.close();
   }
